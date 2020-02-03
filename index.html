@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Agenda</title>
+    <link
+      rel="stylesheet"
+      href="bootstrap-4.4.1-dist/css/bootstrap.min.css"
+      integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+      crossorigin="anonymous"
+    />
+  </head>
+  <body>
+    <div id="app">
+      <nav class="navbar navbar-dark bg-dark text-white">
+        <div class="container">
+          <div class="row">
+            <div class="col">
+              <a href="#/" class="text-white">Agenda</a>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <div page="UsersLogin" class="container hidden-connected">
+        <div class="row">
+          <div class="col">
+            <h1>Entrar</h1>
+            <div>
+              Se você ainda não possui uma conta,
+              <a href="#/users/new">cadastre aqui</a>.
+            </div>
+            <div class="alert alert-danger login-error-message d-none"></div>
+            <form id="login">
+              E-mail
+              <input
+                name="email"
+                type="email"
+                class="form-control form-control-sm"
+              />
+              Senha
+              <input
+                name="password"
+                type="password"
+                class="form-control form-control-sm"
+              />
+              <button type="submit" class="btn btn-sm btn-primary">
+                Entrar
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div page="Home" class="container">
+        <div class="row">
+          <div class="col">
+            <a href="#/events/new" class="btn btn-sm btn-primary"
+              >Novo evento</a
+            >
+            <a href="#/groups/new" class="btn btn-sm btn-primary">Novo grupo</a>
+
+            <div v-for="event in events" class="mb-4">
+              <div>{{ event.start_date | date }}</div>
+              <h4>{{ event.title }}</h4>
+              <div v-if="event.description">{{ event.description }}</div>
+              <span v-for="relation in event.relations">
+                <img :src="'img/' + relation.type + '-icon.png'" height="10" />
+                {{ relation.name }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div page="EventsNew" class="container">
+        <div class="row">
+          <div class="col">
+            <form @submit.prevent="createEvent" id="event">
+              <h1>Novo evento</h1>
+
+              Título
+              <input
+                name="title"
+                type="text"
+                class="form-control form-control-sm"
+              />
+              Descrição
+              <textarea
+                name="description"
+                class="form-control form-control-sm"
+              ></textarea>
+              Marcar pessoas e/ou groups
+              <input
+                v-model="name"
+                type="text"
+                class="form-control form-control-sm"
+              />
+              <div v-if="added.length">
+                <b>Adicionados</b>
+
+                <div v-for="(suggestion, index) in added" class="mb-1">
+                  <img
+                    :src="'img/' + suggestion.type + '-icon.png'"
+                    height="10"
+                  />
+                  {{ suggestion.name }}
+
+                  <button
+                    @click.prevent="() => added.splice(index, 1)"
+                    class="btn btn-sm btn-danger"
+                  >
+                    Remover
+                  </button>
+                </div>
+              </div>
+              <div>
+                <div v-for="suggestion in suggestionsFormatted" class="mb-1">
+                  <img
+                    :src="'img/' + suggestion.type + '-icon.png'"
+                    height="10"
+                  />
+                  {{ suggestion.name }}
+
+                  <button
+                    @click.prevent="added.push(suggestion)"
+                    class="btn btn-sm btn-primary"
+                  >
+                    Adicionar
+                  </button>
+                </div>
+              </div>
+              Data
+              <input
+                name="start_date"
+                type="datetime"
+                class="form-control form-control-sm"
+              />
+              <button type="submit" class="btn btn-sm btn-primary">
+                Salvar
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div page="GroupsNew" class="container">
+        <div class="row">
+          <div class="col">
+            <form @submit.prevent="createGroup" id="group">
+              Nome
+              <input
+                name="name"
+                type="text"
+                class="form-control form-control-sm"
+              />
+              Marcar pessoas
+              <input
+                v-model="name"
+                type="text"
+                class="form-control form-control-sm"
+              />
+              <div v-if="added.length">
+                <b>Adicionados</b>
+
+                <div
+                  v-for="(suggestion, index) in added"
+                  v-if="suggestion.type === 'user'"
+                  class="mb-1"
+                >
+                  <img
+                    :src="'img/' + suggestion.type + '-icon.png'"
+                    height="10"
+                  />
+                  {{ suggestion.name }}
+
+                  <button
+                    @click.prevent="() => added.splice(index, 1)"
+                    class="btn btn-sm btn-danger"
+                  >
+                    Remover
+                  </button>
+                </div>
+              </div>
+              <div>
+                <div
+                  v-for="suggestion in suggestionsFormatted"
+                  v-if="suggestion.type === 'user'"
+                  class="mb-1"
+                >
+                  <img
+                    :src="'img/' + suggestion.type + '-icon.png'"
+                    height="10"
+                  />
+                  {{ suggestion.name }}
+
+                  <button
+                    @click.prevent="added.push(suggestion)"
+                    class="btn btn-sm btn-primary"
+                  >
+                    Adicionar
+                  </button>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-sm btn-primary">
+                Criar
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div page="UsersNew" class="container">
+        <div class="row">
+          <div class="col">
+            <form @submit.prevent="createUser" id="user">
+              <h1>Cadastrar usuário</h1>
+
+              <div>
+                Se você já possui uma conta,
+                <a href="#/users/login">entre aqui</a>.
+              </div>
+
+              <div
+                v-if="createUserError"
+                class="alert alert-danger create-user-error-message"
+              >
+                {{ createUserError }}
+              </div>
+
+              Nome
+              <input
+                name="name"
+                type="text"
+                class="form-control form-control-sm"
+              />
+              E-mail
+              <input
+                name="email"
+                type="email"
+                class="form-control form-control-sm"
+              />
+              Senha
+              <input
+                name="password"
+                type="password"
+                class="form-control form-control-sm"
+              />
+              <button type="submit" class="btn btn-sm btn-primary">
+                Criar usuário
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div page="NotFound" class="container">
+        <div class="row">
+          <div class="col">Página não encontrada.</div>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/moment-with-locales-2.24.0.js"></script>
+    <script src="js/vue.min-2.6.11.js"></script>
+    <script>
+      document.forms.login.addEventListener("submit", event => {
+        event.preventDefault();
+
+        const loginErrorMessage = document.querySelector(
+          ".login-error-message"
+        );
+
+        loginErrorMessage.classList.add("d-none");
+
+        const form = event.target;
+
+        const data = {
+          email: form.email.value,
+          password: form.password.value
+        };
+
+        fetch("api/users/sessions", {
+          method: "post",
+          body: JSON.stringify(data),
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json"
+          }
+        })
+          .then(response => response.json())
+          .then(body => {
+            if (body.error) {
+              loginErrorMessage.classList.remove("d-none");
+              loginErrorMessage.innerHTML = body.error;
+              return false;
+            }
+
+            localStorage.setItem("agenda-token", body.token);
+          });
+      });
+
+      function changePage() {
+        const { hash } = window.location;
+
+        if (hash === "" || hash === "#") {
+          window.location.hash = "#/";
+          return false;
+        }
+
+        const pages = [
+          {
+            path: "/events/new",
+            name: "EventsNew"
+          },
+          {
+            path: "/groups/new",
+            name: "GroupsNew"
+          },
+          {
+            path: "/",
+            name: "Home"
+          },
+          {
+            path: "/users/new",
+            name: "UsersNew"
+          },
+          {
+            path: "/users/login",
+            name: "UsersLogin"
+          }
+        ];
+
+        document
+          .querySelectorAll("*[page]")
+          .forEach(element => element.classList.add("d-none"));
+
+        const page = pages.find(page =>
+          new RegExp("^#" + page.path + "$").test(hash)
+        );
+
+        if (page) {
+          document
+            .querySelector(`*[page="${page.name}"]`)
+            .classList.remove("d-none");
+        } else {
+          document
+            .querySelector(`*[page="NotFound"]`)
+            .classList.remove("d-none");
+        }
+      }
+
+      window.addEventListener("hashchange", changePage);
+      changePage();
+
+      moment.locale("pt-BR");
+
+      var app = new Vue({
+        el: "#app",
+        data: {
+          message: "Hello Vue!",
+          agendaToken: null,
+          events: [],
+          createUserError: null,
+          name: "",
+          suggestions: [],
+          added: []
+        },
+
+        created() {
+          this.agendaToken = localStorage.getItem("agenda-token");
+
+          if (this.agendaToken === null) {
+            window.location.hash = "#/users/login";
+          } else {
+            this.loadEvents();
+          }
+        },
+
+        filters: {
+          date(date) {
+            return moment(date).calendar();
+          }
+        },
+
+        methods: {
+          createGroup() {
+            const form = window.document.forms.group;
+
+            const data = {
+              name: form.name.value,
+              users: this.added
+                .filter(added => added.type === "user")
+                .map(added => added.id)
+            };
+
+            fetch("api/groups", {
+              method: "post",
+              body: JSON.stringify(data),
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                Authorization: this.agendaToken
+              }
+            })
+              .then(response => response.json())
+              .then(body => {
+                if (body.error) {
+                  return false;
+                }
+
+                window.location.hash = "#/";
+                this.loadEvents();
+              });
+          },
+
+          createUser() {
+            const form = window.document.forms.user;
+
+            this.createUserError = null;
+
+            const data = {
+              name: form.name.value,
+              email: form.email.value,
+              password: form.password.value
+            };
+
+            fetch("api/users", {
+              method: "post",
+              body: JSON.stringify(data),
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json"
+              }
+            })
+              .then(response => response.json())
+              .then(body => {
+                if (body.error) {
+                  this.createUserError = body.error;
+                  return false;
+                }
+
+                this.agendaToken = body.token;
+                localStorage.setItem("agenda-token", this.agendaToken);
+                window.location.hash = "#/";
+                this.loadEvents();
+              });
+          },
+
+          createEvent() {
+            const form = document.forms.event;
+
+            const data = {
+              title: form.title.value,
+              description: form.description.value,
+              start_date: form.start_date.value,
+              end_date: null,
+              relations: this.added
+            };
+
+            fetch("api/events", {
+              method: "post",
+              body: JSON.stringify(data),
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                Authorization: this.agendaToken
+              }
+            })
+              .then(response => response.json())
+              .then(body => {
+                if (body.error) {
+                  return false;
+                }
+
+                window.location.hash = "#/";
+                this.loadEvents();
+              });
+          },
+
+          loadEvents() {
+            document
+              .querySelectorAll(".hidden-connected")
+              .forEach(element => element.classList.add("d-none"));
+
+            fetch("api/events", {
+              method: "get",
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                Authorization: this.agendaToken
+              }
+            })
+              .then(response => response.json())
+              .then(body => {
+                if (body.error) {
+                  console.log(body);
+                  return false;
+                }
+
+                body.sort((a, b) => {
+                  return (
+                    moment(a.start_date).valueOf() -
+                    moment(b.start_date).valueOf()
+                  );
+                });
+
+                this.events = body;
+              });
+          },
+
+          search() {
+            fetch(`api/search?name=${this.name}`, {
+              method: "get",
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                Authorization: this.agendaToken
+              }
+            })
+              .then(response => response.json())
+              .then(body => {
+                if (body.error) {
+                  console.log(body);
+                  return false;
+                }
+
+                this.suggestions = body;
+              });
+          }
+        },
+
+        computed: {
+          suggestionsFormatted() {
+            return this.suggestions.filter(
+              suggestion =>
+                !this.added.some(
+                  added =>
+                    added.type === suggestion.type && added.id === suggestion.id
+                )
+            );
+          }
+        },
+
+        watch: {
+          name() {
+            if (this.waitingForSearch) {
+              clearInterval(this.waitingForSearch);
+            }
+
+            this.waitingForSearch = setTimeout(this.search, 500);
+          }
+        }
+      });
+    </script>
+
+    <script
+      src="js/jquery-3.4.1.slim.min.js"
+      integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="js/popper-1.16.0.min.js"
+      integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="bootstrap-4.4.1-dist/js/bootstrap.min.js"
+      integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>
